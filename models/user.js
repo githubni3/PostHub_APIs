@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     email:{
         type:String,
         required:true,
-        unique:true
+        unique:true,
     },
     password:{
         type:String,
@@ -18,6 +18,12 @@ const userSchema = new mongoose.Schema({
     createdAt:{
         type:Date,
         default:Date.now()
-    }
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
 });
+
+// Generating Password Reset Token
+
+
 export const User = mongoose.model("Users",userSchema);

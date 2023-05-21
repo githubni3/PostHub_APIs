@@ -2,6 +2,9 @@ import { User } from "../models/user.js";
 import bcrypt from "bcrypt";
 import { setCookie } from "../utils/setCookie.js";
 import ErrorHandler from "../middlewares/error.js";
+import sendEmail from "../middlewares/sendEmail.js";
+import crypto from 'crypto';
+
 
 export const register = async (req, res, next) => {
   try {
@@ -9,7 +12,7 @@ export const register = async (req, res, next) => {
 
     const isFound = await User.findOne({ email });
     if (isFound) {
-      return next(new ErrorHandler("User Already Exist", 409));
+      return next(new ErrorHandler("Already Have Account", 409));
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = User.create({
@@ -18,7 +21,7 @@ export const register = async (req, res, next) => {
       password: hashedPassword,
     });
 
-    setCookie(newUser, res, "User Added Successfully.", 201);
+    setCookie(newUser, res, "SignUp Successfully.", 201);
   } catch (error) {
     next(error);
   }
@@ -53,8 +56,7 @@ export const getMyProfile = (req, res) => {
   });
 };
 export const logout = (req, res) => {
-  res
-    .status(200)
+  res.status(200)
     .cookie("token", "", {
       expires: new Date(Date.now()),
       sameSite: process.env.NODE_ENV === "Development" ? "lax" : "none",
@@ -65,3 +67,87 @@ export const logout = (req, res) => {
       message: "Logged Out Successfully",
     });
 };
+
+export const resetPassword = async(req,res,next)=>{
+  try {
+    //creating token hash
+    const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire:{$gt:Date.now()},
+    });
+
+    if(!user){
+      return next(new ErrorHandler("Reset Password Token is invalid or has been expired",400));
+    }
+    if(req.body.password !== req.body.confirmPassword){
+      return next(new ErrorHandler("Password does not match",400))
+    }
+    user.password = req.body.password;
+    user.resetPasswordToken = user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    setCookie(user, res, `Welcome ${user.name}`, 200);
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+// Forgot Password
+export const forgotPassword = async(req,res,next) =>{
+
+  try {
+    const user = await User.findOne({email:req.body.email});
+    
+    if(!user){
+      return next(new ErrorHandler("User not found",404));
+    }
+
+    const getResetPasswordToken = ()=> {
+      //Generating Token
+      const resetToken = crypto.randomBytes(20).toString("hex");
+  
+      // Hashing and adding resetPasswordToken to userSchema
+      user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex")
+  
+      user.resetPasswordExpire = Date.now() + 5*60*1000;
+      return resetToken;
+  }
+
+    //Get ResetPassword Token
+
+    const resetToken = getResetPasswordToken();
+    await user.save({validateBeforeSave:false});
+
+    const resetPasswordUrl = `${req.protocol}://${req.get("host")}/api/v1/user/resetpassword/${resetToken}`;
+
+    const message = `Your Password reset token is :- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then, please ignore it `;
+
+    try {
+      await sendEmail({
+        email:user.email,
+        subject:`PostHub Reset Password`,
+        message,
+      });
+      res.status(200).json({
+        success:true,
+        message:`Email sent to ${user.email} successfully`,
+      })
+
+
+    } catch (error) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+
+      await user.save({validateBeforeSave:false});
+      return next(new ErrorHandler(error.message,500));
+    }
+
+
+  } catch (error) {
+    next(error);
+  }
+}

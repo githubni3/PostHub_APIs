@@ -23,7 +23,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/task", taskRouter);
 
 app.get("/", (req, res) => {
-  res.send("<h1>This is working</h1>");
+  res.send("<h1>PostHub Backend is Active</h1>");
 });
 
 // using error middleware
