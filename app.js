@@ -5,6 +5,8 @@ import { config } from "dotenv";
 import cookieParser from "cookie-parser";
 import { errorMiddleWare } from "./middlewares/error.js";
 import cors from 'cors'
+import fileUpload from "express-fileupload";
+
 const app = express();
 config({
   path: "./data/config.env",
@@ -12,6 +14,9 @@ config({
 //using middleware
 app.use(json());
 app.use(cookieParser());
+app.use(fileUpload({
+  useTempFiles:true
+}))
 app.use(cors({
   origin:[process.env.FRONTEND_URL],
   methods:["GET","POST","PUT","DELETE"],

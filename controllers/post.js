@@ -1,24 +1,33 @@
 import ErrorHandler from "../middlewares/error.js";
 import { Posts } from "../models/post.js";
+import cloudinary from 'cloudinary'
+cloudinary.config({ 
+  cloud_name: 'dlceka44g', 
+  api_key: '329694817346381', 
+  api_secret: 'CI4dQPmc98xucPVEI0LVgVzy9fE' 
+});
 
 // create new post
 export const newPost = async (req, res, next) => {
   try {
-    const { title, caption, image } = req.body;
-    const post = await Posts.create({
-      title,
-      caption,
-      image: {
-        public_id: image.public_id,
-        url: image.url,
-      },
-      user: req.user._id,
-    });
-
-    res.status(201).json({
-      success: true,
-      post,
-    });
+    const { title, caption } = req.body;
+    const file = req.files.post_img;
+    cloudinary.v2.uploader.upload(file.tempFilePath,  async function(error, result) {
+      const post = await Posts.create({
+        title,
+        caption,
+        image: {
+          public_id: result.public_id,
+          url: result.url,
+        },
+        user: req.user._id,
+      });
+      res.status(201).json({
+        success: true,
+        post,
+      });
+     });
+    
   } catch (error) {
     next(error);
   }
