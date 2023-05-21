@@ -1,6 +1,6 @@
 import express, { json } from "express";
 import userRouter from "./routes/user.js";
-import taskRouter from "./routes/task.js";
+import postRouter from "./routes/post.js";
 import { config } from "dotenv";
 import cookieParser from "cookie-parser";
 import { errorMiddleWare } from "./middlewares/error.js";
@@ -20,7 +20,7 @@ app.use(cors({
 
 // using routes
 app.use("/api/v1/user", userRouter);
-app.use("/api/v1/task", taskRouter);
+app.use("/api/v1/post", postRouter);
 
 app.get("/", (req, res) => {
   res.send("<h1>PostHub Backend is Active</h1>");

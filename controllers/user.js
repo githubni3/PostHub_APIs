@@ -8,15 +8,20 @@ import crypto from 'crypto';
 
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name,username, email, password } = req.body;
 
-    const isFound = await User.findOne({ email });
-    if (isFound) {
-      return next(new ErrorHandler("Already Have Account", 409));
+    const isUsernameExist = await User.findOne({ username });
+    if(isUsernameExist){
+      return next(new ErrorHandler("Username already exists", 409));
+    }
+    const isEmailExist = await User.findOne({ email });
+    if (isEmailExist) {
+      return next(new ErrorHandler(`Already Have Account with ${email}`, 409));
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = User.create({
       name,
+      username,
       email,
       password: hashedPassword,
     });
@@ -28,21 +33,21 @@ export const register = async (req, res, next) => {
 };
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
     // here we are using  select with +password that means we will get all data of user along with the password
     // select is used for getting some selective data form all the data
     //if we will use select("password") -- it will give us only password but we are using select("+password") -- it will give us all data along with password
 
-    const userData = await User.findOne({ email }).select("+password");
+    const userData = await User.findOne({ username }).select("+password");
     if (!userData) {
-      return next(new ErrorHandler("Incorrect email or password", 401));
+      return next(new ErrorHandler("Incorrect username or password", 401));
     }
 
     const isMatch = await bcrypt.compare(password, userData.password);
 
     if (!isMatch) {
-      return next(new ErrorHandler("Incorrect email or password", 401));
+      return next(new ErrorHandler("Incorrect username or password", 401));
     }
     setCookie(userData, res, `Welcome ${userData.name}`, 200);
   } catch (error) {
@@ -84,7 +89,8 @@ export const resetPassword = async(req,res,next)=>{
     if(req.body.password !== req.body.confirmPassword){
       return next(new ErrorHandler("Password does not match",400))
     }
-    user.password = req.body.password;
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    user.password = hashedPassword;
     user.resetPasswordToken = user.resetPasswordExpire = undefined;
 
     await user.save();
