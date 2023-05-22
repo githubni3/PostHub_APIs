@@ -128,9 +128,11 @@ export const forgotPassword = async(req,res,next) =>{
     const resetToken = getResetPasswordToken();
     await user.save({validateBeforeSave:false});
 
-    const resetPasswordUrl = `${req.protocol}://${req.get("host")}/api/v1/user/resetpassword/${resetToken}`;
+    // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/api/v1/user/resetpassword/${resetToken}`;
+    const FrontednUrl = `${process.env.FRONTEND_URL}/reset/${resetToken}`
 
-    const message = `Your Password reset token is :- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then, please ignore it `;
+    // const message = `Your Password reset token is :- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then, please ignore it `;
+    const message = `Your Password reset token is :- \n\n ${FrontednUrl} \n\n If you have not requested this email then, please ignore it `;
 
     try {
       await sendEmail({
