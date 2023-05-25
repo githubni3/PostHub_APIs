@@ -7,7 +7,7 @@ const router = express.Router();
 router.post("/new",isAuthenticated, newPost);
 router.get("/mypost",isAuthenticated, getMyPost);
 router.get("/all",getAllPosts);
-router.route("/:id").put(isAuthenticated,updatePost).delete(isAuthenticated,deletePost);
+router.route("/:id").put(isAuthenticated,updatePost).delete(deletePost);
 router.put("/like/:id",isAuthenticated,postLike)
 router.put("/unlike/:id",isAuthenticated,postUnLike)
 router.route("/comment/:id/:commentID").post(isAuthenticated,addComment).delete(isAuthenticated,deleteComment)

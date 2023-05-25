@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { errorMiddleWare } from "./middlewares/error.js";
 import cors from 'cors'
 import fileUpload from "express-fileupload";
+import session from 'express-session';
 
 const app = express();
 config({
@@ -17,8 +18,15 @@ app.use(cookieParser());
 app.use(fileUpload({
   useTempFiles:true
 }))
+app.use(
+  session({
+    secret: 'mySecretKey',
+    resave: false,
+    saveUninitialized: true
+  })
+);
 app.use(cors({
-  origin:[`http://localhost:3000`],
+  origin:[`https://posthubpro.netlify.app`],
   methods:["GET","POST","PUT","DELETE"],
   credentials:true
 }))
