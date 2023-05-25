@@ -67,17 +67,19 @@ export const updatePost = async (req, res, next) => {
       return next(new ErrorHandler("Post Not Found", 404));
     }
 
-    const { title, caption, image } = req.body;
-    post.title = title;
-    post.caption = caption;
-    post.image.public_id = image.public_id;
-    post.image.url = image.url;
-    await post.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Post Updated Successfully",
-    });
+    const { title, caption } = req.body;
+    const file = req.files.post_img;
+    cloudinary.v2.uploader.upload(file.tempFilePath,  async function(error, result) {
+      post.title = title;
+      post.caption = caption;
+      post.image.public_id = result.public_id;
+      post.image.url = result.url;
+      await post.save();
+      res.status(201).json({
+        success: true,
+        message: "Post Updated Successfully",
+      });
+     });
   } catch (error) {
     next(error);
   }
@@ -131,7 +133,9 @@ export const postUnLike = async (req, res, next) => {
     }
 
     const userId = req.user._id;
-    post.likes = post.likes.filter((item) => item !== userId);
+    // console.log(post.likes[0].toString() === userId.toString())
+    // console.log(post.likes[0],"\n",userId)
+    post.likes = post.likes.filter((item) => item.toString() !== userId.toString());
 
     await post.save();
     res.status(200).json({
